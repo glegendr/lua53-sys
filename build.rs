@@ -70,7 +70,9 @@ fn main() {
             .file(libc.join("libcpp_throw.cpp"))
             .flag("-fno-rtti")
             .flag("-fexceptions")
-            .flag("-fwasm-exceptions");
+            .flag("-fwasm-exceptions")
+            .flag("-mllvm")
+            .flag("-wasm-use-legacy-eh=false");
         cc::Build::new()
             .file(libc.join("snprintf.c"))
             .include(&libc)
