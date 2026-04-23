@@ -63,6 +63,7 @@ fn main() {
             .file(lua_dir.join("linit_baremetal.c"))
             .file(lua_dir.join("ldblib_baremetal.c"))
             .file(lua_dir.join("loslib_baremetal.c"))
+            .file(lua_dir.join("liolib_baremetal.c"))
             .cpp(true)
             .cpp_link_stdlib(None)
             .include(&libc)
@@ -88,12 +89,39 @@ fn main() {
 
     cc_config_build.out_dir(out.join("lib")).compile("lua53");
 
+    let target = env::var("TARGET").unwrap();
     let mut bindings = bindgen::builder()
         .header("lua/lua.h")
         .header("lua/lualib.h")
         .header("lua/lauxlib.h")
         .default_macro_constant_type(MacroTypeVariation::Signed)
-        .clang_arg("-fvisibility=default");
+        .clang_arg("-fvisibility=default")
+        .clang_arg(format!("--target={}", target))
+        .blocklist_type("lua_Debug")
+        .blocklist_type("lua_CFunction")
+        .blocklist_type("lua_Alloc")
+        .blocklist_type("lua_Hook")
+        .blocklist_type("lua_KFunction")
+        .blocklist_type("lua_Writer")
+        .blocklist_item("LUA_COLIBNAME")
+        .blocklist_item("LUA_TABLIBNAME")
+        .blocklist_item("LUA_IOLIBNAME")
+        .blocklist_item("LUA_OSLIBNAME")
+        .blocklist_item("LUA_STRLIBNAME")
+        .blocklist_item("LUA_BITLIBNAME")
+        .blocklist_item("LUA_MATHLIBNAME")
+        .blocklist_item("LUA_DBLIBNAME")
+        .blocklist_item("LUA_LOADLIBNAME")
+        .blocklist_item("LUA_LOADED_TABLE")
+        .blocklist_item("LUA_PRELOAD_TABLE")
+        .blocklist_item("LUA_UTF8LIBNAME")
+        .blocklist_function("lua_error")
+        .blocklist_function("lua_resume")
+        .blocklist_function("lua_sethook")
+        .blocklist_item("LUA_RIDX_MAINTHREAD")
+        .blocklist_item("LUA_RIDX_GLOBALS")
+        .blocklist_item("LUA_RIDX_LAST")
+        .override_abi(bindgen::Abi::CUnwind, ".*");
 
     if cfg!(feature = "baremetal") {
         bindings = bindings.clang_arg(format!("-I{}", libc.display()));
