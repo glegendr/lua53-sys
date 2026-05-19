@@ -6,6 +6,9 @@ extern "C" {
 #endif
 
 #include <float.h>
+#ifndef INFINITY
+    #define INFINITY (0x1.0p+1024)
+#endif
 #define HUGE_VAL  ((double)INFINITY)
 
 double fabs(double);
@@ -33,4 +36,3 @@ double atan2(double, double);
 #endif
 
 #endif
-

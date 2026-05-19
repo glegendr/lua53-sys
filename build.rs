@@ -93,13 +93,18 @@ fn main() {
             .file(libc.join("libcpp_throw.cpp"))
             .flag("-fno-rtti")
             .flag("-fexceptions")
-            .flag("-fwasm-exceptions")
-            .flag("-mllvm")
-            .flag(if clang_major_version().unwrap_or(0) >= 20 {
-                "-wasm-use-legacy-eh=false"
-            } else {
-                "-wasm-enable-exnref"
-            });
+            .flag("-fwasm-exceptions");
+        let clang_version = clang_major_version().unwrap_or(0);
+        if clang_version >= 20 {
+            cc_config_build
+                .flag("-mllvm")
+                .flag("-wasm-use-legacy-eh=false");
+        } else if clang_version == 19 {
+            cc_config_build.flag("-mllvm").flag("-wasm-enable-exnref");
+        } else {
+            // Clang 18 and below
+            cc_config_build.flag("-mllvm").flag("-wasm-enable-eh");
+        }
         cc::Build::new()
             .file(libc.join("snprintf.c"))
             .include(&libc)
