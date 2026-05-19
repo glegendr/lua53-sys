@@ -1,6 +1,28 @@
-use std::{env, path::PathBuf};
+use std::{env, path::PathBuf, process::Command};
 
 use bindgen::MacroTypeVariation;
+
+/// Returns the major version of the clang compiler used by the cc crate, if detectable.
+fn clang_major_version() -> Option<u32> {
+    // Build a temporary cc::Build just to resolve the compiler path.
+    let compiler = cc::Build::new().get_compiler();
+    let output = Command::new(compiler.path())
+        .arg("--version")
+        .output()
+        .ok()?;
+    let stdout = String::from_utf8(output.stdout).ok()?;
+    // "clang version 18.1.0" or "Apple clang version 16.0.0 (clang-1600...)"
+    for line in stdout.lines() {
+        if let Some(rest) = line
+            .find("clang version ")
+            .map(|pos| &line[pos + "clang version ".len()..])
+        {
+            let major: u32 = rest.split('.').next()?.parse().ok()?;
+            return Some(major);
+        }
+    }
+    None
+}
 
 fn main() {
     let lua_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("lua");
@@ -73,7 +95,11 @@ fn main() {
             .flag("-fexceptions")
             .flag("-fwasm-exceptions")
             .flag("-mllvm")
-            .flag("-wasm-enable-exnref");
+            .flag(if clang_major_version().unwrap_or(0) >= 20 {
+                "-wasm-use-legacy-eh=false"
+            } else {
+                "-wasm-enable-exnref"
+            });
         cc::Build::new()
             .file(libc.join("snprintf.c"))
             .include(&libc)
