@@ -73,7 +73,7 @@ fn main() {
             .flag("-fexceptions")
             .flag("-fwasm-exceptions")
             .flag("-mllvm")
-            .flag("-wasm-use-legacy-eh=false");
+            .flag("-wasm-enable-exnref");
         cc::Build::new()
             .file(libc.join("snprintf.c"))
             .include(&libc)
